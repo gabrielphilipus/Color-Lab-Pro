@@ -48,7 +48,7 @@ def delta_e_cie76(l1, l2):
     return math.sqrt(sum((a-b)**2 for a, b in zip(l1, l2)))
 
 # ==========================================================
-# 2. CLASSE PRINCIPAL DA INTERFACE
+# 2. CLASSE PRINCIPAL
 # ==========================================================
 class AppCores:
     def __init__(self, root):
@@ -59,65 +59,50 @@ class AppCores:
         
         self.cores_hex = []
         self.cor_atual = "#0078d7"
-        self.passo_delta = 1.5
+        self.passo_delta = 1.5 #mais = pixelização / menos = suavização
 
-        # --- Menu de Ferramentas ---
+        # --- Interface ---
         frame_menu = tk.Frame(self.root, pady=15)
         frame_menu.pack(side=tk.TOP, fill=tk.X)
 
-        tk.Button(frame_menu, text="⌨️ Digitar HEX", command=self.ferramenta_digitar, width=15).pack(side=tk.LEFT, padx=10)
-        tk.Button(frame_menu, text="🎨 Seletor Visual", command=self.ferramenta_seletor, width=15).pack(side=tk.LEFT, padx=10)
-        tk.Button(frame_menu, text="🧪 Conta-Gotas", command=self.ferramenta_conta_gotas, width=15, bg="#e3f2fd").pack(side=tk.LEFT, padx=10)
+        tk.Button(frame_menu, text="⌨️ HEX", command=self.ferramenta_digitar, width=12).pack(side=tk.LEFT, padx=10)
+        tk.Button(frame_menu, text="🎨 Seletor", command=self.ferramenta_seletor, width=12).pack(side=tk.LEFT, padx=10)
+        tk.Button(frame_menu, text="🧪 Conta-Gotas", command=self.ferramenta_conta_gotas, width=12, bg="#e3f2fd").pack(side=tk.LEFT, padx=10)
 
-        self.label_info = tk.Label(self.root, text="Clique no gradiente para copiar o HEX", fg="gray", font=("Arial", 9))
+        self.label_info = tk.Label(self.root, text="Clique no gradiente para copiar", fg="gray")
         self.label_info.pack()
 
-        # --- Canvas Responsivo ---
         self.canvas = tk.Canvas(self.root, bg="#f0f0f0", highlightthickness=0)
-        self.canvas.pack(fill=tk.BOTH, expand=True, padx=20, pady=25)
+        self.canvas.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
         self.canvas.bind("<Configure>", lambda e: self.desenhar_gradiente())
         self.canvas.bind("<Button-1>", self.copiar_clique)
 
-        # Estado inicial
         self.gerar_lista_cores(self.cor_atual)
 
-    # --- Lógica das Ferramentas ---
-    def ferramenta_digitar(self):
-        cor = simpledialog.askstring("Input", "Digite o código HEX:", parent=self.root)
-        if cor:
-            cor = cor.strip()
-            if not cor.startswith('#'): cor = '#' + cor
-            self.gerar_lista_cores(cor)
-
-    def ferramenta_seletor(self):
-        cor = colorchooser.askcolor(title="Seletor de Cores", parent=self.root)
-        if cor[1]: self.gerar_lista_cores(cor[1])
-
+    # --- Ferramenta Conta-Gotas com Lupa e Ícone ---
     def ferramenta_conta_gotas(self):
-        # 1. Prepara a tela (esconde o app para o print ser limpo)
         self.root.withdraw()
         self.root.update_idletasks()
         time.sleep(0.2)
         
-        # 2. Captura o Desktop
+        # Captura do Desktop
         self.print_tela = pyautogui.screenshot()
         larg_t, alt_t = self.print_tela.size
         
-        # 3. Cria Overlay de Tela Cheia
         overlay = tk.Toplevel()
         overlay.attributes("-fullscreen", True, "-topmost", True)
-        overlay.config(cursor="none") # Oculta o mouse real
+        # "crosshair" é o ícone de mira/conta-gotas padrão do Windows
+        overlay.config(cursor="crosshair") 
         
         canvas_ov = tk.Canvas(overlay, highlightthickness=0, borderwidth=0)
         canvas_ov.pack(fill="both", expand=True)
         
-        # Mantém a imagem no fundo
         self.img_bg = ImageTk.PhotoImage(self.print_tela)
         canvas_ov.create_image(0, 0, anchor="nw", image=self.img_bg)
 
-        # 4. Configuração da Lupa
-        lupa_size = 180 
+        # Config da Lupa
+        lupa_size = 160 
         zoom = 10
         lupa_label = tk.Label(overlay, bd=1, relief="solid", bg="black")
         lupa_label.place(x=-200, y=-200)
@@ -125,46 +110,53 @@ class AppCores:
         def atualizar_lupa(event):
             x, y = event.x, event.y
             
-            # Recorte de Zoom Perceptual
+            # Recorte e Zoom
             raio = (lupa_size // zoom) // 2
             box = (x - raio, y - raio, x + raio, y + raio)
             recorte = self.print_tela.crop(box)
             zoom_img = recorte.resize((lupa_size, lupa_size), Image.NEAREST)
             
-            # Desenha Mira (Crosshair)
+            # --- Desenhar Feedback Visual na Lupa ---
             draw = ImageDraw.Draw(zoom_img)
             meio = lupa_size // 2
+            
+            # Mira central
             draw.line([meio, 0, meio, lupa_size], fill="red", width=1)
             draw.line([0, meio, lupa_size, meio], fill="red", width=1)
             
-            # Atualiza Widget (com proteção de Garbage Collector)
+            # Ícone de conta-gotas simbólico no canto da lupa
+            # (Um pequeno quadrado com a cor atual do pixel)
+            pixel_color = self.print_tela.getpixel((x, y))
+            draw.rectangle([5, 5, 45, 25], fill="white", outline="black")
+            draw.text((8, 8), rgb_to_hex(pixel_color), fill="black")
+            
+            # Atualizar Imagem
             img_lupa = ImageTk.PhotoImage(zoom_img)
             lupa_label.config(image=img_lupa)
             lupa_label.image = img_lupa
             
-            # Posicionamento Inteligente
-            offset = 15
+            # Posicionamento (seguindo o mouse com offset)
+            offset = 20
             nx = x + offset if x + lupa_size + offset < larg_t else x - lupa_size - offset
             ny = y + offset if y + lupa_size + offset < alt_t else y - lupa_size - offset
             lupa_label.place(x=nx, y=ny)
 
-        def capturar_clique(event):
+        def capturar(event):
             c_rgb = self.print_tela.getpixel((event.x, event.y))
             overlay.destroy()
             self.root.deiconify()
             self.gerar_lista_cores(rgb_to_hex(c_rgb))
 
-        # Bindings do Conta-Gotas
         canvas_ov.bind("<Motion>", atualizar_lupa)
-        canvas_ov.bind("<Button-1>", capturar_clique)
+        canvas_ov.bind("<Button-1>", capturar)
         overlay.bind("<Escape>", lambda e: [overlay.destroy(), self.root.deiconify()])
 
-    # --- Lógica de Gradiente Responsivo ---
+    # --- Funções de Gradiente (Responsivas) ---
     def gerar_lista_cores(self, hex_base):
         self.cor_atual = hex_base
         try:
             lab_alvo = xyz_to_lab(rgb_to_xyz(hex_to_rgb(hex_base)))
-            pontos = [(0,0,0), lab_alvo, (100,0,0)] # Preto -> Cor -> Branco
+            pontos = [(0,0,0), lab_alvo, (100,0,0)]
             self.cores_hex = []
             
             for i in range(len(pontos)-1):
@@ -177,17 +169,16 @@ class AppCores:
                     self.cores_hex.append(rgb_to_hex(xyz_to_rgb(lab_to_xyz(curr))))
             
             self.desenhar_gradiente()
-            self.label_info.config(text=f"Base: {hex_base} | {len(self.cores_hex)} tons perceptíveis", fg="black")
+            self.label_info.config(text=f"Base: {hex_base} | {len(self.cores_hex)} tons", fg="black")
         except:
-            messagebox.showerror("Erro", "Formato de cor inválido.")
+            messagebox.showerror("Erro", "HEX Inválido")
 
     def desenhar_gradiente(self):
         if not self.cores_hex: return
         self.canvas.delete("all")
-        
         w = self.canvas.winfo_width()
         h = self.canvas.winfo_height()
-        if w <= 1: w = 760 # Valor base antes do primeiro render
+        if w <= 1: w = 760
         
         largura_f = w / len(self.cores_hex)
         self.largura_faixa_atual = largura_f
@@ -197,6 +188,16 @@ class AppCores:
             x2 = (i + 1) * largura_f
             self.canvas.create_rectangle(x1, 0, x2, h, fill=c, outline=c)
 
+    def ferramenta_digitar(self):
+        cor = simpledialog.askstring("Input", "HEX:", parent=self.root)
+        if cor:
+            if not cor.startswith('#'): cor = '#' + cor
+            self.gerar_lista_cores(cor)
+
+    def ferramenta_seletor(self):
+        cor = colorchooser.askcolor(title="Seletor", parent=self.root)
+        if cor[1]: self.gerar_lista_cores(cor[1])
+
     def copiar_clique(self, event):
         if not self.cores_hex: return
         idx = int(event.x // self.largura_faixa_atual)
@@ -204,7 +205,7 @@ class AppCores:
             c = self.cores_hex[idx]
             self.root.clipboard_clear()
             self.root.clipboard_append(c)
-            self.label_info.config(text=f"Copiado para o Windows: {c}", fg="#2e7d32", font=("Arial", 9, "bold"))
+            self.label_info.config(text=f"Copiado: {c}", fg="#2e7d32", font=("Arial", 9, "bold"))
 
 if __name__ == "__main__":
     root = tk.Tk()
