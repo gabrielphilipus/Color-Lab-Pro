@@ -5,9 +5,6 @@ from PIL import Image, ImageTk, ImageDraw
 import pyautogui
 import time
 
-# ==========================================================
-# 1. NÚCLEO MATEMÁTICO (CIELAB / DELTA E)
-# ==========================================================
 def hex_to_rgb(hex_code):
     hex_code = hex_code.lstrip('#')
     return [int(hex_code[i:i+2], 16) for i in (0, 2, 4)]
@@ -47,9 +44,8 @@ def xyz_to_rgb(xyz):
 def delta_e_cie76(l1, l2):
     return math.sqrt(sum((a-b)**2 for a, b in zip(l1, l2)))
 
-# ==========================================================
-# 2. CLASSE PRINCIPAL
-# ==========================================================
+# CLASSE PRINCIPAL
+
 class AppCores:
     def __init__(self, root):
         self.root = root
@@ -80,7 +76,7 @@ class AppCores:
 
         self.gerar_lista_cores(self.cor_atual)
 
-    # --- Ferramenta Conta-Gotas com Lupa e Ícone ---
+    # Conta-Gotas
     def ferramenta_conta_gotas(self):
         self.root.withdraw()
         self.root.update_idletasks()
@@ -92,8 +88,7 @@ class AppCores:
         
         overlay = tk.Toplevel()
         overlay.attributes("-fullscreen", True, "-topmost", True)
-        # "crosshair" é o ícone de mira/conta-gotas padrão do Windows
-        overlay.config(cursor="crosshair") 
+        overlay.config(cursor="tcross") #crosshair,tcross,circle,dot,target,plus,hand2,none
         
         canvas_ov = tk.Canvas(overlay, highlightthickness=0, borderwidth=0)
         canvas_ov.pack(fill="both", expand=True)
@@ -102,8 +97,8 @@ class AppCores:
         canvas_ov.create_image(0, 0, anchor="nw", image=self.img_bg)
 
         # Config da Lupa
-        lupa_size = 160 
-        zoom = 10
+        lupa_size = 150 #Tamanho da lupa conta gotas
+        zoom = 10 #Zoom da lupa conta gotas
         lupa_label = tk.Label(overlay, bd=1, relief="solid", bg="black")
         lupa_label.place(x=-200, y=-200)
 
