@@ -5,6 +5,8 @@ from PIL import Image, ImageTk, ImageDraw
 import pyautogui
 import time
 
+#python -m PyInstaller --onefile --noconsole --collect-all PIL --collect-all pyautogui --icon="logo.ico" RGB3.py /Para atualizar .EXE
+
 def hex_to_rgb(hex_code):
     hex_code = hex_code.lstrip('#')
     return [int(hex_code[i:i+2], 16) for i in (0, 2, 4)]
