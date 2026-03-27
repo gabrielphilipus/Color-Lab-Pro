@@ -82,7 +82,6 @@ class AppCores:
         self.root.update_idletasks()
         time.sleep(0.2)
         
-        # Captura do Desktop
         self.print_tela = pyautogui.screenshot()
         larg_t, alt_t = self.print_tela.size
         
@@ -97,44 +96,51 @@ class AppCores:
         canvas_ov.create_image(0, 0, anchor="nw", image=self.img_bg)
 
         # Config da Lupa
-        lupa_size = 150 #Tamanho da lupa conta gotas
+        lupa_size = 180 #Tamanho da lupa conta gotas
         zoom = 10 #Zoom da lupa conta gotas
-        lupa_label = tk.Label(overlay, bd=1, relief="solid", bg="black")
-        lupa_label.place(x=-200, y=-200)
+
+        mask = Image.new('L', (lupa_size, lupa_size), 0)
+        mask_draw = ImageDraw.Draw(mask)
+        mask_draw.ellipse((0, 0, lupa_size, lupa_size), fill=255)
 
         def atualizar_lupa(event):
             x, y = event.x, event.y
             
             # Recorte e Zoom
-            raio = (lupa_size // zoom) // 2
-            box = (x - raio, y - raio, x + raio, y + raio)
+            raio_corte = (lupa_size // zoom) // 2
+            box = (x - raio_corte, y - raio_corte, x + raio_corte, y + raio_corte)
             recorte = self.print_tela.crop(box)
-            zoom_img = recorte.resize((lupa_size, lupa_size), Image.NEAREST) #NEAREST,BILINEAR,BICUBIC,LANCZOS
-            
-            # --- Desenhar Feedback Visual na Lupa ---
+            zoom_img = recorte.resize((lupa_size, lupa_size), Image.NEAREST)
+            zoom_img = zoom_img.convert("RGBA")
+            zoom_img.putalpha(mask) # Aplica a máscara circular
+
+            #Desenhar Feedback Visual na Lupa (Mira e HEX)
             draw = ImageDraw.Draw(zoom_img)
             meio = lupa_size // 2
-            
-            # Mira central
             draw.line([meio, 0, meio, lupa_size], fill="red", width=1)
             draw.line([0, meio, lupa_size, meio], fill="red", width=1)
             
-            # Ícone de conta-gotas simbólico no canto da lupa
-            # (Um pequeno quadrado com a cor atual do pixel)
+            # Texto com o HEX
             pixel_color = self.print_tela.getpixel((x, y))
-            draw.rectangle([5, 5, 45, 25], fill="white", outline="black")
-            draw.text((8, 8), rgb_to_hex(pixel_color), fill="black")
+            hex_txt = rgb_to_hex(pixel_color)
+            # Desenha um pequeno fundo para o texto ser legível
+            draw.rectangle([meio-30, meio+20, meio+30, meio+40], fill="white", outline="black")
+            draw.text((meio-22, meio+24), hex_txt, fill="black")
             
             # Atualizar Imagem
             img_lupa = ImageTk.PhotoImage(zoom_img)
-            lupa_label.config(image=img_lupa)
-            lupa_label.image = img_lupa
+            canvas_ov.delete("lupa_dinamica")
             
-            # Posicionamento (seguindo o mouse com offset)
-            offset = 20
+            # Posicionamento do circulo
+            offset = 30
             nx = x + offset if x + lupa_size + offset < larg_t else x - lupa_size - offset
             ny = y + offset if y + lupa_size + offset < alt_t else y - lupa_size - offset
-            lupa_label.place(x=nx, y=ny)
+            
+            # Desenha a imagem circular
+            canvas_ov.create_image(nx, ny, anchor="nw", image=(img_img_lupa := img_lupa), tag="lupa_dinamica")
+            # Desenha uma borda circular por cima para dar acabamento
+            canvas_ov.create_oval(nx, ny, nx+lupa_size, ny+lupa_size, outline="black", width=2, tag="lupa_dinamica")
+            canvas_ov.img_ref = img_lupa
 
         def capturar(event):
             c_rgb = self.print_tela.getpixel((event.x, event.y))
@@ -146,7 +152,7 @@ class AppCores:
         canvas_ov.bind("<Button-1>", capturar)
         overlay.bind("<Escape>", lambda e: [overlay.destroy(), self.root.deiconify()])
 
-    # --- Funções de Gradiente (Responsivas) ---
+    #Funções de Gradiente
     def gerar_lista_cores(self, hex_base):
         self.cor_atual = hex_base
         try:
