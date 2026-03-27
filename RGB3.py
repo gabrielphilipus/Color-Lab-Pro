@@ -114,7 +114,7 @@ class AppCores:
             raio = (lupa_size // zoom) // 2
             box = (x - raio, y - raio, x + raio, y + raio)
             recorte = self.print_tela.crop(box)
-            zoom_img = recorte.resize((lupa_size, lupa_size), Image.NEAREST)
+            zoom_img = recorte.resize((lupa_size, lupa_size), Image.NEAREST) #NEAREST,BILINEAR,BICUBIC,LANCZOS
             
             # --- Desenhar Feedback Visual na Lupa ---
             draw = ImageDraw.Draw(zoom_img)
