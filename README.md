@@ -40,7 +40,7 @@ Controle total sobre o sinal da cor através de sliders de:
 
 ![Interface Principal](assets/print_principal.png)
 
-### 🧪 Conta-Gotas em Ação
+### 🧪 Conta-Gotas
 ![GIF da Lupa](assets/demonstracao_lupa.gif)
 
 ---
