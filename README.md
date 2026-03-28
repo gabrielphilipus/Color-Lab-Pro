@@ -36,6 +36,15 @@ Controle total sobre o sinal da cor através de sliders de:
 
 ---
 
+## 📸 Demonstração
+
+![Interface Principal](assets/print_principal.png)
+
+### 🧪 Conta-Gotas em Ação
+![GIF da Lupa](assets/demonstracao_lupa.gif)
+
+---
+
 ## ⚙️ Instalação e Execução
 
 1. **Clone o repositório:**
