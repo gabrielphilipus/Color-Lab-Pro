@@ -8,10 +8,6 @@ import colorsys
 import json
 import os
 
-# ==========================================================
-# 1. NÚCLEO MATEMÁTICO (INALATERADO)
-# ==========================================================
-
 def hex_to_rgb(hex_code):
     hex_code = hex_code.lstrip('#')
     return [int(hex_code[i:i+2], 16) for i in (0, 2, 4)]
@@ -74,9 +70,7 @@ def simular_daltonismo(rgb_linear, tipo):
         return [lum, lum, lum]
     return rgb_linear
 
-# ==========================================================
-# 2. CLASSE PRINCIPAL
-# ==========================================================
+#CLASSE PRINCIPAL
 
 class AppCores:
     def __init__(self, root):
@@ -131,7 +125,7 @@ class AppCores:
         self.aplicar_tema()
         self.gerar_lista_cores(self.cor_atual)
 
-    # --- PERSISTÊNCIA ---
+    # SALVAMENTO
     def salvar_configuracoes(self):
         try:
             config_data = {
@@ -171,7 +165,7 @@ class AppCores:
         self.salvar_configuracoes()
         self.root.destroy()
 
-    # --- NAVEGAÇÃO CONFIGS ---
+    # NAVEGAÇÃO CONFIGS
     def abrir_configuracoes(self):
         if self.config_win is None or not tk.Toplevel.winfo_exists(self.config_win):
             self.config_win = tk.Toplevel(self.root)
@@ -239,7 +233,7 @@ class AppCores:
         self.adj_bright.set(0); self.adj_contrast.set(1.0); self.adj_gamma.set(1.0); self.adj_sat.set(1.0); self.adj_hue.set(0); self.adj_temp.set(6500); self.passo_delta.set(1.5); self.sim_daltonismo.set("normal")
         self.gerar_lista_cores(self.cor_atual); self.salvar_configuracoes()
 
-    # --- FERRAMENTAS ---
+    # FERRAMENTAS 
     def ferramenta_conta_gotas(self):
         self.root.withdraw(); time.sleep(0.2); print_tela = pyautogui.screenshot(); larg_t, alt_t = print_tela.size
         overlay = tk.Toplevel(); overlay.attributes("-fullscreen", True, "-topmost", True); overlay.config(cursor="tcross") 
@@ -275,7 +269,7 @@ class AppCores:
             upd(self.config_win)
         if self.cores_hex: self.desenhar_gradiente()
 
-    # --- RENDERIZAÇÃO REAL-TIME ---
+    # RENDERIZAÇÃO TEMPO REAL
     def desenhar_gradiente(self):
         if not self.cores_hex: return
         self.canvas.delete("all")
