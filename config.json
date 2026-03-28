@@ -1,12 +1,12 @@
 {
     "tema": "escuro",
     "sim_daltonismo": "normal",
-    "passo_delta": 1.5,
+    "passo_delta": 4.0,
     "brilho": 0.0,
     "contraste": 1.0,
     "gamma": 1.0,
     "saturacao": 1.0,
     "matiz": 0.0,
     "temperatura": 6500.0,
-    "ultima_cor": "#f0731f"
+    "ultima_cor": "#9cd6d9"
 }
