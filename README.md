@@ -10,12 +10,11 @@
 Diferente de seletores comuns, este laboratório utiliza o espaço de cores **CIELAB** e a fórmula **Delta E (CIE76)** para calcular a diferença entre tons. Isso garante que os gradientes gerados sejam perfeitamente uniformes para a percepção humana.
 
 ### 🧪 Conta-Gotas e Lupa de Precisão
-* **Magnifier 10x:** Capture qualquer pixel da tela com uma lupa circular de alta fidelidade.
-* **Interpolação de Pixel:** Utiliza o método *Nearest Neighbor* para garantir que você veja a grade real de pixels, sem desfoque artificial.
-* **Mira Crosshair:** Precisão absoluta para capturar exatamente o tom desejado.
+* **Magnifier 10x:** Captura qualquer pixel da tela com uma lupa circular.
+* **Interpolação de Pixel:** Utiliza o método *Nearest Neighbor* totalmente ajustável para caso voce prefira com muito ou poucos pixels, sem desfoque artificial.
 
 ### 👁️ Simulação de Daltonismo (Acessibilidade)
-Simule em tempo real como sua paleta de cores é vista por pessoas com diferentes tipos de deficiência visual:
+Simulação em tempo real como a paleta de cores é vista por pessoas com diferentes tipos de deficiência visual:
 * Deuteranopia e Protanopia (Vermelho-Verde).
 * Tritanopia (Azul-Amarelo).
 * Acromatopsia (Cegueira total de cores).
