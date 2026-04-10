@@ -258,6 +258,9 @@ class AppCores:
         self.wcag_fundo_var = tk.StringVar(value="preto_branco")    # Fundo de referência WCAG
         self.ultima_atividade = ""  # Memória da última atividade realizada
 
+        self.mixer_color_a = None
+        self.mixer_color_b = "#ffffff"
+
         # Projetos/Paletas salvas
         self.arquivo_projetos = "projetos.json"
         self.projetos = {}  # {nome: {cores_hex, cor_atual, data_criacao, data_modificacao}}
@@ -506,32 +509,6 @@ class AppCores:
             # Container principal do item
             frame_conteudo = tk.Frame(frame_item, bg=p["window_bg"])
             frame_conteudo.pack(fill=tk.X, expand=True)
-
-            # Preview das cores (primeiras 3)
-            frame_preview = tk.Frame(frame_conteudo, bg=p["window_bg"])
-            frame_preview.pack(fill=tk.X, pady=(0, 2))
-
-            cores = dados.get("cores_hex", [])[:3]
-            for cor in cores:
-                lbl = tk.Label(
-                    frame_preview,
-                    bg=cor,
-                    width=2,
-                    height=1,
-                    relief=tk.FLAT
-                )
-                lbl.pack(side=tk.LEFT, padx=1)
-
-            # Preenche com placeholders se tiver menos de 3 cores
-            for _ in range(3 - len(cores)):
-                lbl = tk.Label(
-                    frame_preview,
-                    bg="#cccccc",
-                    width=2,
-                    height=1,
-                    relief=tk.FLAT
-                )
-                lbl.pack(side=tk.LEFT, padx=1)
 
             # Frame para botão e menu
             frame_botoes = tk.Frame(frame_conteudo, bg=p["window_bg"])
@@ -1607,8 +1584,19 @@ class AppCores:
         BTN = p["btn"]
 
         # ── Estado ───────────────────────────────────────────────────────────
-        cor_a_var  = tk.StringVar(value=self.cor_atual)
-        cor_b_var  = tk.StringVar(value="#ffffff")
+        if self.mixer_color_a is None:
+            self.mixer_color_a = self.cor_atual
+
+        cor_a_var  = tk.StringVar(value=self.mixer_color_a)
+        cor_b_var  = tk.StringVar(value=self.mixer_color_b)
+
+        self._mixer_win = win
+        self._mixer_cor_a_var = cor_a_var
+        self._mixer_cor_b_var = cor_b_var
+
+        cor_a_var.trace_add("write", lambda *_: setattr(self, 'mixer_color_a', cor_a_var.get()))
+        cor_b_var.trace_add("write", lambda *_: setattr(self, 'mixer_color_b', cor_b_var.get()))
+
         t_var      = tk.DoubleVar(value=0.5)
         passos_var = tk.IntVar(value=7)
         modo_var   = tk.StringVar(value="LAB")
@@ -1734,6 +1722,8 @@ class AppCores:
             desenhar_gradiente_mixer(escala)
             desenhar_swatches_mixer(escala)
 
+        self._mixer_updater = atualizar
+
         # ── UI — construída DEPOIS de atualizar estar definida ────────────────
 
         # Seleção de cores A e B
@@ -1776,8 +1766,15 @@ class AppCores:
                         command=lambda c=cor: [var.set(c), pop.destroy(), atualizar()]
                     ).pack(side=tk.LEFT, padx=2, pady=12)
 
+            def pick_gotas():
+                win.withdraw()
+                t_name = "mixer_a" if rotulo == "Cor A" else "mixer_b"
+                self.ferramenta_conta_gotas(target=t_name)
+
             tk.Button(linha, text="🎨", bg=BTN, fg=FG,
                       relief=tk.FLAT, command=pick_seletor).pack(side=tk.LEFT, padx=2)
+            tk.Button(linha, text="🧪", bg=BTN, fg=FG,
+                      relief=tk.FLAT, command=pick_gotas).pack(side=tk.LEFT, padx=2)
             tk.Button(linha, text="🕐", bg=BTN, fg=FG,
                       relief=tk.FLAT, command=pick_historico).pack(side=tk.LEFT, padx=2)
 
@@ -1940,7 +1937,7 @@ class AppCores:
         win.after(80, atualizar)
 
     # FERRAMENTAS 
-    def ferramenta_conta_gotas(self):
+    def ferramenta_conta_gotas(self, target=None):
         self.root.withdraw(); time.sleep(0.2); print_tela = pyautogui.screenshot(); larg_t, alt_t = print_tela.size
         overlay = tk.Toplevel(); overlay.attributes("-fullscreen", True, "-topmost", True); overlay.config(cursor="tcross") 
         canvas_ov = tk.Canvas(overlay, highlightthickness=0); canvas_ov.pack(fill="both", expand=True)
@@ -1955,9 +1952,25 @@ class AppCores:
             nx = x + 30 if x + lupa_size + 30 < larg_t else x - lupa_size - 30; ny = y + 30 if y + lupa_size + 30 < alt_t else y - lupa_size - 30
             canvas_ov.create_image(nx, ny, anchor="nw", image=img_lupa, tag="lupa_dinamica"); canvas_ov.create_oval(nx, ny, nx+lupa_size, ny+lupa_size, outline="black", width=2, tag="lupa_dinamica"); canvas_ov.img_ref = img_lupa
         def capturar(event):
-            c = rgb_to_hex(print_tela.getpixel((event.x, event.y))); overlay.destroy(); self.root.deiconify(); self.gerar_lista_cores(c, salvar_estado_undo=True); self.salvar_configuracoes()
+            c = rgb_to_hex(print_tela.getpixel((event.x, event.y))); overlay.destroy(); self.root.deiconify()
+            if target == "mixer_a" and hasattr(self, '_mixer_cor_a_var'):
+                self._mixer_cor_a_var.set(c)
+                if hasattr(self, '_mixer_updater'): self._mixer_updater()
+                if hasattr(self, '_mixer_win'): self._mixer_win.deiconify()
+            elif target == "mixer_b" and hasattr(self, '_mixer_cor_b_var'):
+                self._mixer_cor_b_var.set(c)
+                if hasattr(self, '_mixer_updater'): self._mixer_updater()
+                if hasattr(self, '_mixer_win'): self._mixer_win.deiconify()
+            else:
+                self.gerar_lista_cores(c, salvar_estado_undo=True); self.salvar_configuracoes()
         canvas_ov.bind("<Motion>", atualizar_lupa); canvas_ov.bind("<Button-1>", capturar)
-        overlay.bind("<Escape>", lambda e:[overlay.destroy(), self.root.deiconify()]); overlay.img_ref = img_bg
+        
+        def on_escape(e):
+            overlay.destroy()
+            self.root.deiconify()
+            if target in ["mixer_a", "mixer_b"] and hasattr(self, '_mixer_win'):
+                self._mixer_win.deiconify()
+        overlay.bind("<Escape>", on_escape); overlay.img_ref = img_bg
 
     def aplicar_tema(self, event=None):
         p = self.paletas[self.tema.get()]; self.root.config(bg=p["window_bg"]); self.frame_menu.config(bg=p["window_bg"]); self.canvas.config(bg=p["canvas"])
